@@ -1,0 +1,58 @@
+<div class="admin-shell" [class.rider-mode]="isRiderPage()">
+  @if (!isRiderPage()) {
+    <aside class="app-sidebar" aria-label="เมนูหลัก">
+      <a routerLink="/customers" class="brand-link">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5v-7Z" />
+            <path d="m4.5 8.8 7.5 4.3 7.5-4.3M12 13v7M8 6.3l8 4.6" />
+          </svg>
+        </span>
+        <span class="brand-copy">
+          <strong>มื้อเที่ยง</strong>
+          <small>ระบบจัดส่งอาหาร</small>
+        </span>
+      </a>
+
+      <p class="sidebar-heading">เมนูหลัก</p>
+      <nav class="main-nav">
+        <a routerLink="/customers" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20m6-8a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7-6h4m-2-2v4m-2 8h4" /></svg>
+          <span>ลูกค้า</span>
+        </a>
+        <a routerLink="/orders" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10l1 3v13H6V7l1-3Zm2 0v4h6V4M9 12h6m-6 3h6" /></svg>
+          <span>ออเดอร์</span>
+        </a>
+        <a routerLink="/plans" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19c3-5 4-9 7-9s4 4 7 0M5 19h4m-4 0v-4m14-8h-4m4 0v4M7 6h.01M17 18h.01" /></svg>
+          <span>วางแผนเส้นทาง</span>
+        </a>
+        <a routerLink="/jobs" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H6V3h1Zm6 1v4h4m-8 4h6m-6 4h6" /></svg>
+          <span>ใบงานจัดส่ง</span>
+        </a>
+        <a routerLink="/rider" routerLinkActive="active" class="nav-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="m6 17 4-7h4l4 7m-8-7 3 7m-1-10h3" /></svg>
+          <span>สำหรับไรเดอร์</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="footer-dot" aria-hidden="true"></span>
+        <span>จัดการลูกค้าและงานส่ง</span>
+      </div>
+    </aside>
+  }
+
+  <div class="app-main-column">
+    @if (!isRiderPage()) {
+      <header class="app-topbar">
+        <p><span>ระบบจัดส่ง</span><span class="breadcrumb-divider">/</span><strong>{{ currentPageTitle() }}</strong></p>
+      </header>
+    }
+    <div class="page-content">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>

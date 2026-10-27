@@ -1,0 +1,167 @@
+<main class="mx-auto max-w-[1800px] space-y-5 px-3 py-5 sm:px-5 xl:px-8 lg:py-7">
+  <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="text-sm font-medium text-pink-700">ข้อมูลร้าน</p>
+      <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-900">จัดการออเดอร์</h1>
+      <p class="mt-1 text-sm leading-6 text-slate-600">เพิ่มรายการสั่งซื้อ ปรับจำนวนกล่อง และสร้างออเดอร์ตัวอย่าง</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="rounded-full bg-white px-3 py-2 text-sm font-medium text-slate-700 ring-1 ring-slate-200" role="status">
+        {{ loading() ? 'กำลังโหลด...' : orders().length + ' รายการ' }}
+      </span>
+      <button type="button" (click)="openOrderModal()" [disabled]="customersLoading()"
+        class="min-h-11 rounded-lg bg-pink-700 px-4 text-sm font-semibold text-white hover:bg-pink-800 disabled:cursor-not-allowed disabled:opacity-50">
+        เพิ่มออเดอร์
+      </button>
+      <button type="button" (click)="reloadAllData()" [disabled]="loading()"
+        class="min-h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+        {{ loading() ? 'กำลังโหลด' : 'โหลดใหม่' }}
+      </button>
+    </div>
+  </header>
+
+  <div *ngIf="actionError() && !orderFormOpen" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{{ actionError() }}</div>
+  <div *ngIf="actionMessage() && !orderFormOpen" class="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800" role="status" aria-live="polite">{{ actionMessage() }}</div>
+
+  <div *ngIf="orderFormOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="order-form-title" (keydown.escape)="closeOrderModal()">
+    <section class="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-4 shadow-xl sm:p-6">
+      <div class="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <h2 id="order-form-title" class="text-lg font-semibold text-slate-900">{{ isEditMode ? 'แก้ไขออเดอร์ #' + editingOrderId : 'เพิ่มออเดอร์ใหม่' }}</h2>
+          <p class="mt-1 text-sm text-slate-600">หนึ่งออเดอร์สั่งได้ 1–3 กล่อง</p>
+        </div>
+        <button type="button" (click)="closeOrderModal()" [disabled]="actionLoading()"
+          class="min-h-10 rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">ปิด</button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label for="order-customer" class="mb-1.5 block text-sm font-medium text-slate-700">ลูกค้า <span class="text-red-700">*</span></label>
+          <select id="order-customer" name="orderCustomer" [(ngModel)]="selectedCustomerId" [disabled]="customersLoading()"
+            class="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-base disabled:bg-slate-100">
+            <option value="">{{ customersLoading() ? 'กำลังโหลดรายชื่อลูกค้า...' : 'เลือกลูกค้า' }}</option>
+            <option *ngFor="let c of customers()" [value]="c.id">{{ c.name }} ({{ c.phone }})</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label for="order-quantity" class="mb-1.5 block text-sm font-medium text-slate-700">จำนวนกล่อง <span class="text-red-700">*</span></label>
+            <input id="order-quantity" name="orderQuantity" type="number" min="1" max="3" step="1" inputmode="numeric" [(ngModel)]="quantity"
+              class="min-h-11 w-full rounded-lg border border-slate-300 px-3 text-base" />
+          </div>
+          <div>
+            <label for="order-date" class="mb-1.5 block text-sm font-medium text-slate-700">วันที่สั่งซื้อ</label>
+            <input id="order-date" name="orderDate" type="date" [(ngModel)]="orderDate"
+              class="min-h-11 w-full rounded-lg border border-slate-300 px-3 text-base" />
+          </div>
+        </div>
+      </div>
+
+      <p *ngIf="actionError()" class="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{{ actionError() }}</p>
+      <div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <button type="button" (click)="closeOrderModal()" [disabled]="actionLoading()"
+          class="min-h-11 rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">ยกเลิก</button>
+        <button type="button" (click)="onSaveOrder()" [disabled]="actionLoading() || customersLoading()"
+          class="min-h-11 rounded-lg bg-pink-700 px-5 font-semibold text-white hover:bg-pink-800 disabled:cursor-not-allowed disabled:opacity-50">
+          {{ actionLoading() ? 'กำลังบันทึก...' : (isEditMode ? 'บันทึกการแก้ไข' : 'เพิ่มออเดอร์') }}
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <section class="rounded-xl border border-pink-100 bg-pink-50/70 p-4 sm:p-5" aria-labelledby="simulation-title">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-sm font-medium text-pink-800">สำหรับทดสอบระบบ</p>
+        <h2 id="simulation-title" class="mt-1 text-lg font-semibold text-slate-900">จำลองออเดอร์</h2>
+        <p class="mt-1 text-sm leading-6 text-slate-600">สุ่มสร้างรายการ 20–30 ออเดอร์ โดยใช้ข้อมูลลูกค้าในระบบ</p>
+      </div>
+      <div class="grid grid-cols-1 gap-2 sm:grid-cols-[180px_auto_auto] sm:items-end">
+        <div>
+          <label for="random-amount" class="mb-1.5 block text-sm font-medium text-slate-700">จำนวนรายการ</label>
+          <input id="random-amount" name="randomAmount" type="number" min="20" max="30" step="1" inputmode="numeric" [(ngModel)]="randomAmount" [disabled]="actionLoading()"
+            class="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-base disabled:bg-slate-100" />
+        </div>
+        <button type="button" (click)="onRandom()" [disabled]="actionLoading()"
+          class="min-h-11 rounded-lg bg-pink-700 px-4 font-semibold text-white hover:bg-pink-800 disabled:cursor-not-allowed disabled:opacity-50">
+          {{ actionLoading() ? 'กำลังดำเนินการ...' : 'สร้างออเดอร์จำลอง' }}
+        </button>
+        <button type="button" (click)="clearDemoOrder()" [disabled]="actionLoading() || ordersLoading()"
+          class="min-h-11 rounded-lg border border-red-200 bg-white px-4 font-medium text-red-800 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50">
+          {{ actionLoading() ? 'กำลังดำเนินการ...' : 'ล้างออเดอร์จำลอง' }}
+        </button>
+      </div>
+    </div>
+    <p class="mt-3 text-xs leading-5 text-slate-600">การล้างจะลบเฉพาะออเดอร์ที่ทำเครื่องหมายว่าเป็นข้อมูลจำลอง</p>
+  </section>
+
+  <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" aria-labelledby="order-list-title">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-4 sm:px-5">
+      <div>
+        <h2 id="order-list-title" class="font-semibold text-slate-900">รายการสั่งซื้อ</h2>
+        <p class="mt-1 text-sm text-slate-600">แสดงทั้งออเดอร์จริงและออเดอร์จำลอง</p>
+      </div>
+      <span class="text-sm font-medium text-slate-600">{{ orders().length }} รายการ</span>
+    </div>
+    <p *ngIf="listError()" class="mx-4 mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800 sm:mx-5" role="alert">{{ listError() }}</p>
+
+    <div *ngIf="loading() && orders().length === 0" class="px-4 py-10 text-center text-sm text-slate-600" role="status" aria-live="polite">กำลังโหลดรายการออเดอร์...</div>
+    <div *ngIf="!loading() && orders().length === 0 && !listError()" class="px-4 py-10 text-center">
+      <p class="font-medium text-slate-800">ยังไม่มีรายการสั่งซื้อ</p>
+      <p class="mt-1 text-sm text-slate-600">เพิ่มออเดอร์หรือสร้างออเดอร์จำลองเพื่อเริ่มต้น</p>
+    </div>
+
+    <ul *ngIf="orders().length > 0" class="divide-y divide-slate-200 md:hidden" aria-label="รายการสั่งซื้อ">
+      <li *ngFor="let item of orders()" class="space-y-3 p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="font-mono text-sm font-semibold text-slate-900">ออเดอร์ #{{ item.id }}</p>
+            <p class="mt-1 font-medium text-slate-800">{{ item.customer?.name || 'ลูกค้า #' + item.customer_id }}</p>
+            <p *ngIf="item.customer?.phone" class="text-sm text-slate-600">{{ item.customer?.phone }}</p>
+          </div>
+          <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold"
+            [ngClass]="item.is_demo ? 'bg-pink-50 text-pink-800' : 'bg-slate-100 text-slate-700'">{{ item.is_demo ? 'จำลอง' : 'จริง' }}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <div class="rounded-lg bg-slate-50 p-2.5"><p class="text-xs text-slate-500">จำนวน</p><p class="mt-1 font-medium text-slate-900">{{ item.quantity }} กล่อง</p></div>
+          <div class="rounded-lg bg-slate-50 p-2.5"><p class="text-xs text-slate-500">วันที่</p><p class="mt-1 font-medium text-slate-900">{{ item.order_date }}</p></div>
+        </div>
+        <div class="flex items-center justify-between gap-3">
+          <span class="rounded-full px-2.5 py-1 text-xs font-medium"
+            [ngClass]="item.status === 'cancelled' ? 'bg-red-50 text-red-800' : item.status === 'pending' ? 'bg-amber-50 text-amber-900' : 'bg-green-50 text-green-800'">{{ item.status }}</span>
+          <div class="flex gap-2">
+            <button type="button" (click)="onEditOrder(item)" [disabled]="actionLoading()" class="min-h-10 rounded-lg border border-slate-300 px-3 text-sm font-medium hover:bg-slate-50 disabled:opacity-50">แก้ไข</button>
+            <button type="button" (click)="onCancel(item.id)" [disabled]="actionLoading()" class="min-h-10 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-800 hover:bg-red-50 disabled:opacity-50">ลบ</button>
+          </div>
+        </div>
+      </li>
+    </ul>
+
+    <div *ngIf="orders().length > 0" class="hidden overflow-x-auto md:block">
+      <table class="w-full min-w-[880px] text-left text-sm">
+        <thead class="bg-slate-50 text-slate-600">
+          <tr>
+            <th scope="col" class="px-5 py-3 font-medium">ออเดอร์</th>
+            <th scope="col" class="px-5 py-3 font-medium">ลูกค้า</th>
+            <th scope="col" class="px-5 py-3 font-medium">จำนวน</th>
+            <th scope="col" class="px-5 py-3 font-medium">วันที่</th>
+            <th scope="col" class="px-5 py-3 font-medium">สถานะ</th>
+            <th scope="col" class="px-5 py-3 font-medium">ประเภท</th>
+            <th scope="col" class="px-5 py-3 text-right font-medium">จัดการ</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr *ngFor="let item of orders()" class="hover:bg-slate-50">
+            <td class="px-5 py-3.5 font-mono font-medium text-slate-900">#{{ item.id }}</td>
+            <td class="px-5 py-3.5"><p class="font-medium text-slate-900">{{ item.customer?.name || 'ลูกค้า #' + item.customer_id }}</p><p *ngIf="item.customer?.phone" class="mt-0.5 text-xs text-slate-500">{{ item.customer?.phone }}</p></td>
+            <td class="px-5 py-3.5">{{ item.quantity }} กล่อง</td>
+            <td class="px-5 py-3.5">{{ item.order_date }}</td>
+            <td class="px-5 py-3.5"><span class="rounded-full px-2.5 py-1 text-xs font-medium" [ngClass]="item.status === 'cancelled' ? 'bg-red-50 text-red-800' : item.status === 'pending' ? 'bg-amber-50 text-amber-900' : 'bg-green-50 text-green-800'">{{ item.status }}</span></td>
+            <td class="px-5 py-3.5"><span class="rounded-full px-2.5 py-1 text-xs font-medium" [ngClass]="item.is_demo ? 'bg-pink-50 text-pink-800' : 'bg-slate-100 text-slate-700'">{{ item.is_demo ? 'จำลอง' : 'จริง' }}</span></td>
+            <td class="px-5 py-3.5"><div class="flex justify-end gap-2"><button type="button" (click)="onEditOrder(item)" [disabled]="actionLoading()" class="min-h-10 rounded-lg border border-slate-300 px-3 font-medium hover:bg-slate-50 disabled:opacity-50">แก้ไข</button><button type="button" (click)="onCancel(item.id)" [disabled]="actionLoading()" class="min-h-10 rounded-lg border border-red-200 px-3 font-medium text-red-800 hover:bg-red-50 disabled:opacity-50">ลบ</button></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
